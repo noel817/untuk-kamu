@@ -427,20 +427,32 @@ const steps = {
   `
 };
 
+function lockHeight(px){
+  stepOuter.style.height = px + 'px';
+}
+function releaseHeight(){
+  stepOuter.style.height = 'auto';
+}
+/* kept for any leftover calls elsewhere: just release to auto so content
+   is never clipped, since the outer wrapper only needs a fixed pixel
+   height for the brief crossfade moment during a step swap. */
 function syncHeight(){
-  stepOuter.style.height = stepWrap.scrollHeight + 'px';
+  releaseHeight();
 }
 
 function goToStep(name, opts={}){
   const doSwap = ()=>{
     stepWrap.innerHTML = steps[name](opts);
     afterStepRender(name);
-    syncHeight();
+    lockHeight(stepWrap.scrollHeight);
     requestAnimationFrame(()=>{ stepWrap.classList.remove('leaving'); });
+    clearTimeout(stepOuter._releaseTimer);
+    stepOuter._releaseTimer = setTimeout(releaseHeight, 480);
   };
   if(stepWrap.innerHTML.trim() === ''){
     doSwap();
   } else {
+    lockHeight(stepWrap.scrollHeight);
     stepWrap.classList.add('leaving');
     setTimeout(doSwap, 260);
   }
@@ -453,7 +465,6 @@ function afterStepRender(name){
     if(!questionBlock.classList.contains('show')){
       setTimeout(()=>{
         questionBlock.classList.add('show');
-        syncHeight();
       }, 1600);
     }
   }
